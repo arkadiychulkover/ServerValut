@@ -97,22 +97,38 @@ namespace ServerValut
                         continue;
                     }
 
+                    NetworkStream str = client.GetStream();
+                    BinaryReader reader = new BinaryReader(str);
+                    BinaryWriter writerr = new(str);
+
                     if (!clients.ContainsKey(endpoint))
                     {
-                        clients.Add(endpoint, client);
-                        requestCounts[clientIp] = 0;
-
-                        this.Invoke(new Action(() =>
+                        string usData = reader.ReadString();
+                        string[] uspas = usData.Split(':');
+                        if (accountsData.ContainsKey(uspas[0]) && accountsData[uspas[0]] == uspas[1])
                         {
-                            Conections.Items.Add($"{endpoint} connected");
-                        }));
-                        File.AppendAllText("log.txt", $"{DateTime.Now}: {endpoint} connected.\n");
 
-                        var stream = client.GetStream();
-                        var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true);
-                        writer.Write("Connected");
-                        writer.Flush();
-                        usersCount++;
+                            clients.Add(endpoint, client);
+                            requestCounts[clientIp] = 0;
+
+                            this.Invoke(new Action(() =>
+                            {
+                                Conections.Items.Add($"{endpoint} connected");
+                            }));
+                            File.AppendAllText("log.txt", $"{DateTime.Now}: {endpoint} connected.\n");
+
+                            var stream = client.GetStream();
+                            var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true);
+                            writer.Write("Connected");
+                            writer.Flush();
+                            usersCount++;
+                        }
+                        else 
+                        {
+                            writerr.Write("Password or username incorrect. Try again later");
+                            writerr.Flush();
+                            client.Close();
+                        }
                     }
 
                     Thread thread = new Thread(() => HandleClient(client, endpoint, clientIp));

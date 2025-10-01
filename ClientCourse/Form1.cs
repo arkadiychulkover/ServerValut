@@ -35,6 +35,7 @@ namespace ClientCourse
                     reader = new BinaryReader(stream);
                     writer = new BinaryWriter(stream);
 
+                    writer.Write(form.textBox2.Text);
                     string resp = reader.ReadString();
 
                     if (resp != "Connected")
