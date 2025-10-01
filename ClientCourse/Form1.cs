@@ -6,9 +6,12 @@ namespace ClientCourse
     public partial class Form1 : Form
     {
         static TcpClient? client;
-        static bool connected = false;
+        static BinaryWriter? writer;
+        static BinaryReader? reader;
 
+        static bool connected = false;
         static Form1? form;
+
         public Form1()
         {
             InitializeComponent();
@@ -24,16 +27,39 @@ namespace ClientCourse
         {
             if (!connected)
             {
-                if (client == null)
-                    client = new TcpClient();
-                client.Connect("127.0.0.1", 2565);
-                connected = true;
-                MessageBox.Show("Connected to server");
+                try
+                {
+                    client = new TcpClient("127.0.0.1", 2565);
+                    NetworkStream stream = client.GetStream();
+
+                    reader = new BinaryReader(stream);
+                    writer = new BinaryWriter(stream);
+
+                    string resp = reader.ReadString();
+
+                    if (resp != "Connected")
+                    {
+                        form!.Invoke(new Action(() =>
+                        {
+                            form.Messages.Items.Add($"Server: {resp}");
+                        }));
+                        return;
+                    }
+
+                    connected = true;
+                    MessageBox.Show("Connected to server");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error: {ex.Message}");
+                }
             }
             else
             {
                 client?.Close();
                 client = null;
+                writer = null;
+                reader = null;
                 connected = false;
                 MessageBox.Show("Disconnected");
             }
@@ -49,17 +75,31 @@ namespace ClientCourse
 
         static void SendMessage(string message)
         {
-            if (connected && client != null)
+            if (connected && client != null && writer != null && reader != null)
             {
-                NetworkStream stream = client.GetStream();
-                BinaryWriter writer = new BinaryWriter(stream);
-                BinaryReader reader = new BinaryReader(stream);
+                try
+                {
+                    writer.Write(message);
+                    writer.Flush();
 
-                writer.Write(message);
-                writer.Flush();
+                    string response = reader.ReadString();
 
-                string response = reader.ReadString();
-                form!.Messages.Items.Add($"Server: {response}");
+                    form!.Invoke(new Action(() =>
+                    {
+                        form.Messages.Items.Add($"Server: {response}");
+                    }));
+
+                    if (response == "Limit reached. Try again later.")
+                    {
+                        connected = false;
+                        MessageBox.Show("Disconnected");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error: {ex.Message}");
+                    connected = false;
+                }
             }
             else
             {

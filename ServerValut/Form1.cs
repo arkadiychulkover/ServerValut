@@ -9,12 +9,13 @@ namespace ServerValut
         IPEndPoint ep;
         TcpListener listener;
 
-        static Form1 form;
-
         static bool isStarted = false;
 
         Dictionary<string, TcpClient> clients = new();
         Dictionary<string, string> courses = new();
+
+        Dictionary<string, int> requestCounts = new();
+        Dictionary<string, DateTime> bannedClients = new();
 
         public Form1()
         {
@@ -64,20 +65,42 @@ namespace ServerValut
                 try
                 {
                     TcpClient client = listener.AcceptTcpClient();
-                    string clientEndPoint = client.Client.RemoteEndPoint!.ToString();
+                    string endpoint = client.Client.RemoteEndPoint!.ToString();
+                    string clientIp = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
 
-                    if (!clients.ContainsKey(clientEndPoint))
+                    if (bannedClients.ContainsKey(clientIp) &&
+                        DateTime.Now < bannedClients[clientIp].AddMinutes(1))
                     {
-                        clients.Add(clientEndPoint, client);
-                        this.Invoke(new Action(() =>
-                        {
-                            Conections.Items.Add(clientEndPoint + "conected");
-                        }));
-                        File.AppendAllText("log.txt", $"{DateTime.Now}: {clientEndPoint} connected.\n");
-                        
+                        using var stream = client.GetStream();
+                        using var writer = new BinaryWriter(stream);
+                        writer.Write("You are banned. Try again later.");
+                        writer.Flush();
+                        client.Close();
+                        continue;
+                    }
+                    else if (bannedClients.ContainsKey(clientIp))
+                    {
+                        bannedClients.Remove(clientIp);
                     }
 
-                    Thread thread = new Thread(() => HandleClient(client));
+                    if (!clients.ContainsKey(endpoint))
+                    {
+                        clients.Add(endpoint, client);
+                        requestCounts[clientIp] = 0;
+
+                        this.Invoke(new Action(() =>
+                        {
+                            Conections.Items.Add($"{endpoint} connected");
+                        }));
+                        File.AppendAllText("log.txt", $"{DateTime.Now}: {endpoint} connected.\n");
+
+                        var stream = client.GetStream();
+                        var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true);
+                        writer.Write("Connected");
+                        writer.Flush();
+                    }
+
+                    Thread thread = new Thread(() => HandleClient(client, endpoint, clientIp));
                     thread.IsBackground = true;
                     thread.Start();
                 }
@@ -88,10 +111,8 @@ namespace ServerValut
             }
         }
 
-        public void HandleClient(TcpClient client)
+        public void HandleClient(TcpClient client, string endpoint, string ip)
         {
-            string endpoint = client.Client.RemoteEndPoint!.ToString();
-
             try
             {
                 using NetworkStream stream = client.GetStream();
@@ -101,23 +122,41 @@ namespace ServerValut
                 while (client.Connected && isStarted)
                 {
                     string message = reader.ReadString();
+
+                    if (!requestCounts.ContainsKey(ip))
+                        requestCounts[ip] = 0;
+
+                    requestCounts[ip]++;
+
+                    int limit = (int)numericUpDown1.Value;
+
+                    if (requestCounts[ip] > limit)
+                    {
+                        writer.Write("Limit reached. Try again later.");
+                        writer.Flush();
+
+                        bannedClients[ip] = DateTime.Now;
+                        break;
+                    }
+
                     string response = courses.ContainsKey(message) ? courses[message] : "Course not found";
 
-                    File.AppendAllText("log.txt" ,$"{message} sent to {endpoint} at {DateTime.Now.ToString()}\n");
-                                        
+                    File.AppendAllText("log.txt", $"{message} sent to {endpoint} at {DateTime.Now}\n");
+
                     writer.Write(response);
                     writer.Flush();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                File.AppendAllText("log.txt", $"Error with {endpoint}: {ex.Message}\n");
             }
             finally
             {
                 clients.Remove(endpoint);
                 this.Invoke(new Action(() =>
                 {
-                    Conections.Items.Add(endpoint + "disconected");
+                    Conections.Items.Add($"{endpoint} disconnected");
                 }));
                 client.Close();
                 File.AppendAllText("log.txt", $"{DateTime.Now}: {endpoint} disconnected.\n");
