@@ -32,7 +32,14 @@
             Conections = new ListBox();
             numericUpDown1 = new NumericUpDown();
             label1 = new Label();
+            label2 = new Label();
+            numericUsers = new NumericUpDown();
+            NamesAndPasswords = new ListBox();
+            UsGetter = new TextBox();
+            label3 = new Label();
+            button1 = new Button();
             ((System.ComponentModel.ISupportInitialize)numericUpDown1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numericUsers).BeginInit();
             SuspendLayout();
             // 
             // Starter
@@ -50,7 +57,7 @@
             Conections.FormattingEnabled = true;
             Conections.Location = new Point(12, 47);
             Conections.Name = "Conections";
-            Conections.Size = new Size(358, 184);
+            Conections.Size = new Size(358, 264);
             Conections.TabIndex = 1;
             // 
             // numericUpDown1
@@ -69,11 +76,67 @@
             label1.TabIndex = 3;
             label1.Text = "Select count of requests ";
             // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(402, 105);
+            label2.Name = "label2";
+            label2.Size = new Size(177, 20);
+            label2.TabIndex = 4;
+            label2.Text = "Select max count of users";
+            // 
+            // numericUsers
+            // 
+            numericUsers.Location = new Point(402, 128);
+            numericUsers.Name = "numericUsers";
+            numericUsers.Size = new Size(171, 27);
+            numericUsers.TabIndex = 5;
+            // 
+            // NamesAndPasswords
+            // 
+            NamesAndPasswords.FormattingEnabled = true;
+            NamesAndPasswords.Location = new Point(402, 187);
+            NamesAndPasswords.Name = "NamesAndPasswords";
+            NamesAndPasswords.Size = new Size(171, 64);
+            NamesAndPasswords.TabIndex = 6;
+            // 
+            // UsGetter
+            // 
+            UsGetter.Location = new Point(402, 284);
+            UsGetter.Name = "UsGetter";
+            UsGetter.Size = new Size(171, 27);
+            UsGetter.TabIndex = 7;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(402, 261);
+            label3.Name = "label3";
+            label3.Size = new Size(49, 20);
+            label3.TabIndex = 8;
+            label3.Text = "Us:Pas";
+            // 
+            // button1
+            // 
+            button1.Location = new Point(579, 283);
+            button1.Name = "button1";
+            button1.Size = new Size(46, 29);
+            button1.TabIndex = 9;
+            button1.Text = "Add";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(637, 321);
+            ClientSize = new Size(637, 327);
+            Controls.Add(button1);
+            Controls.Add(label3);
+            Controls.Add(UsGetter);
+            Controls.Add(NamesAndPasswords);
+            Controls.Add(numericUsers);
+            Controls.Add(label2);
             Controls.Add(label1);
             Controls.Add(numericUpDown1);
             Controls.Add(Conections);
@@ -81,6 +144,7 @@
             Name = "Form1";
             Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)numericUpDown1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numericUsers).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -91,5 +155,11 @@
         private ListBox Conections;
         private NumericUpDown numericUpDown1;
         private Label label1;
+        private Label label2;
+        private NumericUpDown numericUsers;
+        private ListBox NamesAndPasswords;
+        private TextBox UsGetter;
+        private Label label3;
+        private Button button1;
     }
 }

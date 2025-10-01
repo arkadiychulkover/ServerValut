@@ -11,11 +11,15 @@ namespace ServerValut
 
         static bool isStarted = false;
 
+        static int usersCount = 0;
+
         Dictionary<string, TcpClient> clients = new();
         Dictionary<string, string> courses = new();
 
         Dictionary<string, int> requestCounts = new();
         Dictionary<string, DateTime> bannedClients = new();
+
+        Dictionary<string, string> accountsData = new();
 
         public Form1()
         {
@@ -83,6 +87,16 @@ namespace ServerValut
                         bannedClients.Remove(clientIp);
                     }
 
+                    if (usersCount >= numericUsers.Value)
+                    {
+                        using var stream = client.GetStream();
+                        using var writer = new BinaryWriter(stream);
+                        writer.Write("Server doesnt have any places. Try again later");
+                        writer.Flush();
+                        client.Close();
+                        continue;
+                    }
+
                     if (!clients.ContainsKey(endpoint))
                     {
                         clients.Add(endpoint, client);
@@ -98,6 +112,7 @@ namespace ServerValut
                         var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true);
                         writer.Write("Connected");
                         writer.Flush();
+                        usersCount++;
                     }
 
                     Thread thread = new Thread(() => HandleClient(client, endpoint, clientIp));
@@ -161,6 +176,19 @@ namespace ServerValut
                 client.Close();
                 File.AppendAllText("log.txt", $"{DateTime.Now}: {endpoint} disconnected.\n");
             }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string data = UsGetter.Text;
+            string[] uspas = data.Split(":");
+
+            accountsData[uspas[0]] = uspas[1];
+            this.Invoke(new Action(() =>
+            {
+                NamesAndPasswords.Items.Add($"{data}");
+            }));
+            UsGetter.Text = "";
         }
     }
 }
